@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include "service.h"
 
 int main()
 {
@@ -12,7 +13,7 @@ int main()
     }
 
     // 打开服务
-    SC_HANDLE hService = OpenService(handler4ServiceControlManager, "MyService", SERVICE_ALL_ACCESS);
+    SC_HANDLE hService = OpenService(handler4ServiceControlManager, SERVICE_NAME, SERVICE_ALL_ACCESS);
     if (hService == NULL)
     {
         printf("OpenService failed: %d\n", GetLastError());
@@ -36,6 +37,3 @@ int main()
 
     return 0;
 }
-
-
-// 这个程序会尝试卸载名为"MyService"的服务。你需要将"MyService"替换为你想要卸载的服务的名称。

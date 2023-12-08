@@ -10,10 +10,9 @@
 
 // 使用StartServiceCtrlDispatcher函数来连接服务控制程序。
 
-// 以下是一个简单的示例：
-
 #include <windows.h>
 #include <stdio.h>
+#include "service.h"
 
 SERVICE_STATUS_HANDLE serviceStatusHandler;
 SERVICE_STATUS serviceStatus;
@@ -27,14 +26,14 @@ int main()
 {
     SERVICE_TABLE_ENTRY ServiceTable[] =
     {
-        { "OpenInCurrentScreenService", ServiceMain },
+        { SERVICE_NAME, ServiceMain },
         { NULL, NULL }
     };
 
     // 启动服务的控制分发器，连接服务控制程序
     if (!StartServiceCtrlDispatcher(ServiceTable))
     {
-        // 处理错误
+        return 1;
     }
 
     return 0;
@@ -44,7 +43,7 @@ int main()
 void WINAPI ServiceMain(DWORD dwArgc, LPTSTR *lpszArgv)
 {
     //注册服务的控制处理程序
-    serviceStatusHandler = RegisterServiceCtrlHandlerEx("OpenInCurrentScreenService", ServiceHandlerEx, NULL);
+    serviceStatusHandler = RegisterServiceCtrlHandlerEx(SERVICE_NAME, ServiceHandlerEx, NULL);
 
     ZeroMemory(&serviceStatus, sizeof(serviceStatus));
     serviceStatus.dwServiceType = SERVICE_WIN32;
