@@ -1,23 +1,32 @@
 #include <windows.h>
-#include "service.h"
 #include <string.h>
+#include <stdio.h>
+#include "service.h"
+#include "managerRun.h"
 
-void ManagerRun(LPCTSTR exeName, LPCTSTR param)
+char* GetServiceDescription()
 {
-    SHELLEXECUTEINFO ShExecInfo = { 0 };
-    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-    ShExecInfo.hwnd = NULL;
-    ShExecInfo.lpVerb = "runas";
-    ShExecInfo.lpFile = exeName;
-    ShExecInfo.lpParameters = param;
-    ShExecInfo.lpDirectory = NULL;
-    ShExecInfo.nShow = SW_SHOW;
-    ShExecInfo.hInstApp = NULL;
-    ShellExecuteEx(&ShExecInfo);
-    CloseHandle(ShExecInfo.hProcess);
-    return;
+    // char* description;
+    // FILE *fp = fopen("serviceDescription.txt", "r");
+    // if (fp == NULL)
+    // {
+    //     return NULL;
+    // }
+    // fseek(fp, 0, SEEK_END);
+    // long size = ftell(fp);
+    // fseek(fp, 0, SEEK_SET);
+    // description = (char*)malloc(size + 1);
+    // fread(description, 1, size, fp);
+    // description[size] = '\0';
+    // fclose(fp);
+
+    // return description;
+    return  "Make the window always open in the screen where the mouse is located\n";
+            // "使窗口总是打开在鼠标所在的屏幕上\n"
+            // "使窗口總是打開在滑鼠所在的螢幕上\n"
+            // "マウスがある画面でウィンドウを開くようにする";
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -31,6 +40,17 @@ int main(int argc, char *argv[])
 
     if (handler4ServiceControlManager == NULL)
     {
+        MessageBox(NULL, "failed to OpenSCManager()", "tip", MB_OK);
+        return 1;
+    }
+
+    // 检查服务是否已经存在
+    SC_HANDLE handler4Service = OpenService(handler4ServiceControlManager, SERVICE_NAME, SERVICE_ALL_ACCESS);
+    if (handler4Service != NULL)
+    {
+        MessageBox(NULL, "Service already exsit", "tip", MB_OK);
+        CloseServiceHandle(handler4Service);
+        CloseServiceHandle(handler4ServiceControlManager);
         return 1;
     }
 
@@ -40,7 +60,7 @@ int main(int argc, char *argv[])
     if (lastSlash != NULL) {
         strcpy(lastSlash + 1, SERVICE_NAME".exe");
     }
-    SC_HANDLE handler4Service = CreateService(
+    handler4Service = CreateService(
         handler4ServiceControlManager,  // 服务控制管理器句柄
         SERVICE_NAME,                   // 服务名称
         SERVICE_NAME,                   // 服务显示名称
@@ -58,20 +78,18 @@ int main(int argc, char *argv[])
 
     if (handler4Service == NULL)
     {
+        MessageBox(NULL, "failed to CreateService()", "tip", MB_OK);
         CloseServiceHandle(handler4ServiceControlManager);
         return 1;
     }
 
     // 设置服务描述
     SERVICE_DESCRIPTION sd;
-    sd.lpDescription = "Make the window always open in the screen where the mouse is located\n"
-        "\xe4\xbd\xbf\xe7\xaa\x97\xe5\x8f\xa3\xe6\x80\xbb\xe6\x98\xaf\xe6\x89\x93\xe5\xbc\x80\xe5\x9c\xa8\xe9\xbc\xa0\xe6\xa0\x87\xe6\x89\x80\xe5\x9c\xa8\xe7\x9a\x84\xe5\xb1\x8f\xe5\xb9\x95\xe4\xb8\x8a\n"
-        "\xe4\xbd\xbf\xe7\xaa\x97\xe5\x8f\xa3\xe7\xb8\xbd\xe6\x98\xaf\xe6\x89\x93\xe9\x96\x8b\xe5\x9c\xa8\xe6\xbb\x91\xe9\xbc\xa0\xe6\x89\x80\xe5\x9c\xa8\xe7\x9a\x84\xe8\x9e\xa2\xe5\xb9\x95\xe4\xb8\x8a\n"
-        "\xe3\x83\x9e\xe3\x82\xa6\xe3\x82\xb9\xe3\x81\x8c\xe3\x81\x82\xe3\x82\x8b\xe7\x94\xbb\xe9\x9d\xa2\xe3\x81\xa7\xe3\x82\xa6\xe3\x82\xa3\xe3\x83\xb3\xe3\x83\x89\xe3\x82\xa6\xe3\x82\x92\xe9\x96\x8b"
-        "\xe3\x81\x8f\xe3\x82\x88\xe3\x81\x86\xe3\x81\xab\xe3\x81\x99\xe3\x82\x8b\n";
-// 使窗口总是打开在鼠标所在的屏幕上\n使窗口總是打開在滑鼠所在的螢幕上\nマウスがある画面でウィンドウを開くようにする\n"
+    sd.lpDescription = GetServiceDescription();
+
 
     if (!ChangeServiceConfig2(handler4Service, SERVICE_CONFIG_DESCRIPTION, &sd)) {
+        MessageBox(NULL, "failed to set description", "tip", MB_OK);
         CloseServiceHandle(handler4Service);
         CloseServiceHandle(handler4ServiceControlManager);
         return 1;
@@ -81,6 +99,8 @@ int main(int argc, char *argv[])
 
     CloseServiceHandle(handler4Service);
     CloseServiceHandle(handler4ServiceControlManager);
+
+    MessageBox(NULL, "success to Run Service", "tip", MB_OK);
 
     return 0;
 }

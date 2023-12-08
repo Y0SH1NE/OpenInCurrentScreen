@@ -18,12 +18,16 @@ SERVICE_STATUS_HANDLE serviceStatusHandler;
 SERVICE_STATUS serviceStatus;
 HHOOK hHook; // 全局变量，用于在ServiceMain和ServiceHandlerEx之间共享钩子句柄
 
+
 void WINAPI ServiceMain(DWORD dwArgc, LPTSTR *lpszArgv);
 DWORD WINAPI ServiceHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
 LRESULT CALLBACK HookProc4WhCbt(int nCode, WPARAM wParam, LPARAM lParam);
 
 int main()
 {
+    FILE* fp = fopen(".\\log.txt", "a");
+    fprintf(fp, "->main()\n");
+    fclose(fp);
     SERVICE_TABLE_ENTRY ServiceTable[] =
     {
         { SERVICE_NAME, ServiceMain },
@@ -42,28 +46,39 @@ int main()
 // 服务的主函数：这是服务的入口点，当服务控制管理器启动服务时，会调用这个函数。这个函数需要符合LPSERVICE_MAIN_FUNCTION类型的要求。
 void WINAPI ServiceMain(DWORD dwArgc, LPTSTR *lpszArgv)
 {
+    FILE* fp = fopen("log.txt", "a");
+    fprintf(fp, "->ServiceMain()\n");
     //注册服务的控制处理程序
     serviceStatusHandler = RegisterServiceCtrlHandlerEx(SERVICE_NAME, ServiceHandlerEx, NULL);
-
+    if (serviceStatusHandler == NULL)
+    {
+        fprintf(fp, "ERROR: RegisterServiceCtrlHandlerEx failed\n");
+        return;
+    }
+    fprintf(fp, "->RegisterServiceCtrlHandlerEx()\n");
     ZeroMemory(&serviceStatus, sizeof(serviceStatus));
     serviceStatus.dwServiceType = SERVICE_WIN32;
     serviceStatus.dwCurrentState = SERVICE_START_PENDING;
     serviceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
     SetServiceStatus(serviceStatusHandler, &serviceStatus);
 
+    fprintf(fp, "->SetServiceStatus()\n");
+
     // 安装钩子
     hHook = SetWindowsHookEx(WH_CBT, HookProc4WhCbt, NULL, 0);
     if (hHook == NULL)
     {
+        fprintf(fp, "ERROR: SetWindowsHookEx failed\n");
         return;
     }
+    fprintf(fp, "->SetWindowsHookEx()\n");
 
     serviceStatus.dwCurrentState = SERVICE_RUNNING;
     SetServiceStatus(serviceStatusHandler, &serviceStatus);
 
     while (1)
     {
-        Sleep(100000);
+
     }
 }
 
