@@ -1,0 +1,8 @@
+test
+*.exe
+.vscode
+log.txt
+MSG00409.bin
+SVC_ERROR.h
+SVC_ERROR.rc
+*.dll
